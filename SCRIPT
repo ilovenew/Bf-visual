@@ -1,186 +1,123 @@
+-- Roblox Warning GUI Script
 local Players = game:GetService("Players")
-local UIS = game:GetService("UserInputService")
-local TS = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+local TweenService = game:GetService("TweenService")
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "WarningGui"
+screenGui.Parent = game.CoreGui
+screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
--- GUI container
-local gui = Instance.new("ScreenGui")
-gui.Name = "DRIX_UI"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-gui.Enabled = true
-gui.Parent = playerGui
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "WarningFrame"
+mainFrame.Size = UDim2.new(0.4, 0, 0.15, 0)
+mainFrame.Position = UDim2.new(0.3, 0, 0.85, 0)
+mainFrame.AnchorPoint = Vector2.new(0, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+mainFrame.BorderSizePixel = 2
+mainFrame.BorderColor3 = Color3.fromRGB(255, 0, 0)
+mainFrame.ClipsDescendants = true
+mainFrame.Parent = screenGui
+mainFrame.Visible = false
 
--- Main Frame
-local main = Instance.new("Frame")
-main.Size = UDim2.new(0, 200, 0, 170)
-main.Position = UDim2.new(1, -230, 0.4, -85)
-main.BackgroundColor3 = Color3.fromRGB(35, 0, 60)
-main.BorderSizePixel = 0
-main.Parent = gui
-Instance.new("UICorner", main).CornerRadius = UDim.new(0, 12)
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
 
--- Glow
-local glow = Instance.new("UIStroke", main)
-glow.Color = Color3.fromRGB(180, 0, 255)
-glow.Thickness = 2
-glow.Transparency = 0.2
+local stroke = Instance.new("UIStroke")
+stroke.Color = Color3.fromRGB(255, 50, 50)
+stroke.Thickness = 3
+stroke.Parent = mainFrame
 
--- Gradient
-local gradient = Instance.new("UIGradient", main)
-gradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 0, 90)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 0, 40))
-}
-gradient.Rotation = 45
+local warningLabel = Instance.new("TextLabel")
+warningLabel.Name = "WarningText"
+warningLabel.Size = UDim2.new(0.9, 0, 0.7, 0)
+warningLabel.Position = UDim2.new(0.05, 0, 0.15, 0)
+warningLabel.BackgroundTransparency = 1
+warningLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+warningLabel.TextScaled = true
+warningLabel.Font = Enum.Font.GothamBold
+warningLabel.Text = "WARNING MESSAGE"
+warningLabel.TextWrapped = true
+warningLabel.Parent = mainFrame
 
--- Header
-local label = Instance.new("TextLabel")
-label.Size = UDim2.new(1, 0, 0, 30)
-label.BackgroundTransparency = 1
-label.Text = "TRADE FREZZER"
-label.TextSize = 16
-label.Font = Enum.Font.GothamBold
-label.Parent = main
+local icon = Instance.new("ImageLabel")
+icon.Name = "WarningIcon"
+icon.Size = UDim2.new(0, 30, 0, 30)
+icon.Position = UDim2.new(0.02, 0, 0.55, 0)
+icon.AnchorPoint = Vector2.new(0, 0.5)
+icon.BackgroundTransparency = 1
+icon.Image = "rbxassetid://7733765394"
+icon.Parent = mainFrame
 
-task.spawn(function()
-	local hue = 0
-	while true do
-		label.TextColor3 = Color3.fromHSV(hue, 1, 1)
-		hue = (hue + 0.005) % 1
-		task.wait(0.03)
-	end
-end)
-
--- Close Button
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 20, 0, 20)
-closeBtn.Position = UDim2.new(1, -25, 0, 5)
-closeBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-closeBtn.Text = "X"
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.TextSize = 13
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.Parent = main
-Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 5)
-
-closeBtn.MouseButton1Click:Connect(function()
-	gui.Enabled = false
-end)
-
--- Toggle Creator
-local function makeToggle(text, yPos, callback)
-	local base = Instance.new("Frame")
-	base.Size = UDim2.new(0.9, 0, 0, 30)
-	base.Position = UDim2.new(0.5, 0, 0, yPos)
-	base.BackgroundColor3 = Color3.fromRGB(45, 0, 65)
-	base.BorderSizePixel = 0
-	base.AnchorPoint = Vector2.new(0.5, 0)
-	base.Parent = main
-	Instance.new("UICorner", base).CornerRadius = UDim.new(0, 6)
-
-	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 40, 0, 20)
-	btn.Position = UDim2.new(1, -45, 0.5, -10)
-	btn.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
-	btn.BorderSizePixel = 0
-	btn.Text = ""
-	btn.Parent = base
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(1, 0)
-
-	local dot = Instance.new("Frame")
-	dot.Size = UDim2.new(0, 16, 0, 16)
-	dot.Position = UDim2.new(1, -18, 0.5, -8)
-	dot.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	dot.BorderSizePixel = 0
-	dot.Parent = btn
-	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
-
-	local txt = Instance.new("TextLabel")
-	txt.Size = UDim2.new(1, -55, 1, 0)
-	txt.Position = UDim2.new(0, 10, 0, 0)
-	txt.BackgroundTransparency = 1
-	txt.Text = text
-	txt.TextColor3 = Color3.fromRGB(255, 255, 255)
-	txt.TextSize = 14
-	txt.Font = Enum.Font.Gotham
-	txt.TextXAlignment = Enum.TextXAlignment.Left
-	txt.Parent = base
-
-	local on = true
-	local function setToggleState(state)
-		on = state
-		local goals = {
-			[btn] = {BackgroundColor3 = on and Color3.fromRGB(0, 170, 255) or Color3.fromRGB(60, 60, 65)},
-			[dot] = {Position = on and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8)}
-		}
-		for obj, goal in pairs(goals) do
-			TS:Create(obj, TweenInfo.new(0.2), goal):Play()
-		end
-	end
-
-	btn.MouseButton1Click:Connect(function()
-		setToggleState(not on)
-		if callback then callback(on) end
-	end)
-
-	setToggleState(true)
+local function showWarning(message, duration)
+    mainFrame.Visible = true
+    mainFrame.Size = UDim2.new(0, 0, 0.15, 0)
+    mainFrame.Position = UDim2.new(0.5, 0, 0.85, 0)
+    
+    warningLabel.Text = message
+    
+    local openTween = TweenService:Create(
+        mainFrame,
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0.4, 0, 0.15, 0)}
+    )
+    
+    openTween:Play()
+    
+    task.wait(duration or 6)
+    
+    local closeTween = TweenService:Create(
+        mainFrame,
+        TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+        {Size = UDim2.new(0, 0, 0.15, 0)}
+    )
+    
+    closeTween:Play()
+    closeTween.Completed:Connect(function()
+        mainFrame.Visible = false
+    end)
 end
 
--- Add toggles
-makeToggle("Freeze Trade", 40, function(state)
-	print("Freeze Trade:", state)
-end)
+local function onChatted(message)
+    if string.sub(message:lower(), 1, 6) == "!warn " then
+        local targetMessage = string.sub(message, 7)
+        if #targetMessage > 0 then
+            showWarning(targetMessage, 6)
+        end
+    elseif message:lower() == "!owarn" then
+        showWarning("PLS DON'T CLICK ! FOR NO REASON PLS BE PATIENT AND BYPASS ALMOST FINISHED 🫡", 6)
+    end
+end
 
-makeToggle("Auto Accept", 75, function(state)
-	print("Auto Accept:", state)
-end)
+local function hookChat()
+    if LocalPlayer:FindFirstChild("PlayerGui") then
+        LocalPlayer.Chatted:Connect(onChatted)
+    end
+    
+    if game:GetService("TextChatService") then
+        local textChatService = game:GetService("TextChatService")
+        for _, channel in ipairs(textChatService:GetChildren()) do
+            if channel:IsA("TextChannel") then
+                channel.OnIncomingMessage = function(message)
+                    if message.TextSource then
+                        local player = Players:GetPlayerByUserId(message.TextSource.UserId)
+                        if player and player == LocalPlayer then
+                            onChatted(message.Text)
+                        end
+                    end
+                    return message
+                end
+            end
+        end
+    end
+end
 
-makeToggle("ADD ALL ITEMS", 110, function(state)
-	print("Add All Items:", state)
-end)
+hookChat()
 
--- Footer
-local footer = Instance.new("TextLabel")
-footer.Size = UDim2.new(1, -10, 0, 22)
-footer.Position = UDim2.new(0, 0, 1, -22)
-footer.BackgroundTransparency = 1
-footer.Text = "TIKTOK: DRIX SCRIPT HUB"
-footer.TextColor3 = Color3.fromRGB(200, 100, 255)
-footer.TextSize = 14
-footer.Font = Enum.Font.GothamBold
-footer.TextXAlignment = Enum.TextXAlignment.Right
-footer.Parent = main
+showWarning("DR!X SCRIPT LOADED! CLICK ON THE BYPASS BUTTON TO LOAD SCRIPT", 4)
 
--- Dragging
-local dragging, dragStart, startPos
-
-main.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 then
-		dragging = true
-		dragStart = input.Position
-		startPos = main.Position
-
-		local conn
-		conn = input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-				if conn then conn:Disconnect() end
-			end
-		end)
-	end
-end)
-
-UIS.InputChanged:Connect(function(input)
-	if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-		local delta = input.Position - dragStart
-		main.Position = UDim2.new(
-			startPos.X.Scale,
-			startPos.X.Offset + delta.X,
-			startPos.Y.Scale,
-			startPos.Y.Offset + delta.Y
-		)
-	end
-end)
+print("Warning GUI Script Loaded Successfully!")
+print("Commands:")
+print("!warn [message] - Show custom warning")
+print("!owarn - Show default warning")
