@@ -2,6 +2,8 @@
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local TweenService = game:GetService("TweenService")
+local TextChatService = game:GetService("TextChatService")
+local StarterGui = game:GetService("StarterGui")
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "WarningGui"
@@ -50,7 +52,12 @@ icon.BackgroundTransparency = 1
 icon.Image = "rbxassetid://7733765394"
 icon.Parent = mainFrame
 
+-- Function to show warning
 local function showWarning(message, duration)
+    if not message or #message == 0 then
+        return
+    end
+    
     mainFrame.Visible = true
     mainFrame.Size = UDim2.new(0, 0, 0.15, 0)
     mainFrame.Position = UDim2.new(0.5, 0, 0.85, 0)
@@ -79,42 +86,104 @@ local function showWarning(message, duration)
     end)
 end
 
-local function onChatted(message)
-    if string.sub(message:lower(), 1, 6) == "!warn " then
+-- Function to process chat commands
+local function processChatCommand(message)
+    local lowerMessage = message:lower()
+    
+    if string.sub(lowerMessage, 1, 6) == "!warn " then
         local targetMessage = string.sub(message, 7)
         if #targetMessage > 0 then
             showWarning(targetMessage, 6)
+            return true
         end
-    elseif message:lower() == "!owarn" then
+    elseif lowerMessage == "!owarn" then
         showWarning("PLS DON'T CLICK ! FOR NO REASON PLS BE PATIENT AND BYPASS ALMOST FINISHED 🫡", 6)
-    end
-end
-
-local function hookChat()
-    if LocalPlayer:FindFirstChild("PlayerGui") then
-        LocalPlayer.Chatted:Connect(onChatted)
+        return true
     end
     
-    if game:GetService("TextChatService") then
-        local textChatService = game:GetService("TextChatService")
-        for _, channel in ipairs(textChatService:GetChildren()) do
-            if channel:IsA("TextChannel") then
-                channel.OnIncomingMessage = function(message)
-                    if message.TextSource then
-                        local player = Players:GetPlayerByUserId(message.TextSource.UserId)
-                        if player and player == LocalPlayer then
-                            onChatted(message.Text)
+    return false
+end
+
+-- Handle legacy chat system
+local function handleLegacyChat()
+    LocalPlayer.Chatted:Connect(function(message)
+        processChatCommand(message)
+    end)
+end
+
+-- Handle new text chat system
+local function handleTextChat()
+    if not TextChatService then return end
+    
+    -- Listen for messages in all channels
+    for _, channel in ipairs(TextChatService:GetChildren()) do
+        if channel:IsA("TextChannel") then
+            local originalFunction = channel.OnIncomingMessage
+            channel.OnIncomingMessage = function(message)
+                if message.TextSource then
+                    local player = Players:GetPlayerByUserId(message.TextSource.UserId)
+                    if player and player == LocalPlayer then
+                        local isCommand = processChatCommand(message.Text)
+                        if isCommand then
+                            -- Return nil to hide the command from chat
+                            return nil
                         end
                     end
-                    return message
                 end
+                return originalFunction and originalFunction(message) or message
             end
         end
     end
+    
+    -- Also handle command registration for the new chat system
+    local function registerTextChatCommands()
+        local textChatCommands = TextChatService:FindFirstChild("TextChatCommands")
+        if not textChatCommands then
+            textChatCommands = Instance.new("Folder")
+            textChatCommands.Name = "TextChatCommands"
+            textChatCommands.Parent = TextChatService
+        end
+        
+        -- Register !warn command - FIXED: Now properly extracts just the message
+        local warnCommand = Instance.new("TextChatCommand")
+        warnCommand.Name = "WarnCommand"
+        warnCommand.PrimaryAlias = "!warn"
+        warnCommand.SecondaryAlias = "/warn"
+        warnCommand.Parent = textChatCommands
+        
+        warnCommand.Triggered:Connect(function(source, fullMessage)
+            -- Extract just the message part (remove the command)
+            local message = string.sub(fullMessage, 7) -- Remove "!warn " prefix
+            if #message > 0 then
+                showWarning(message, 6)
+            else
+                showWarning("Please provide a warning message after !warn", 4)
+            end
+        end)
+        
+        -- Register !owarn command
+        local owarnCommand = Instance.new("TextChatCommand")
+        owarnCommand.Name = "OWarnCommand"
+        owarnCommand.PrimaryAlias = "!owarn"
+        owarnCommand.SecondaryAlias = "/owarn"
+        owarnCommand.Parent = textChatCommands
+        
+        owarnCommand.Triggered:Connect(function()
+            showWarning("PLS DON'T CLICK ! FOR NO REASON PLS BE PATIENT AND BYPASS ALMOST FINISHED 🫡", 6)
+        end)
+    end
+    
+    -- Try to register commands, but don't break if we can't
+    pcall(registerTextChatCommands)
 end
 
-hookChat()
+-- Handle both chat systems
+handleLegacyChat()
+if TextChatService then
+    handleTextChat()
+end
 
+-- Show initial message
 showWarning("DR!X SCRIPT LOADED! CLICK ON THE BYPASS BUTTON TO LOAD SCRIPT", 4)
 
 print("Warning GUI Script Loaded Successfully!")
